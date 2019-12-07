@@ -11,8 +11,13 @@ import socket
 OFF_COLOR = '000000000'
 
 class Light():
-  def __init__(self, ip):
+  def __init__(self, ip, name = None):
     self._ip = ip
+    self._name = name
+  
+  @property
+  def name(self):
+    return self._name
 
   def turn_on(self, rbw):
     set_color(self._ip, rbw)
