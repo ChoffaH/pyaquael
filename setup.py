@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
   name='py-aquael',
-  version='0.0.3',
+  version='0.0.4',
   scripts=['aquael.py'],
   author="Christopher Haglund",
   description="A python library for the Aquael Leddy link unofficial API",
@@ -14,6 +14,9 @@ setuptools.setup(
   long_description_content_type="text/markdown",
   url="https://github.com/choffah/py-aquael",
   packages=setuptools.find_packages(),
+  install_requires=[
+    'docopt',
+  ],
   classifiers=[
       "Programming Language :: Python :: 3",
       "License :: OSI Approved :: BSD License",

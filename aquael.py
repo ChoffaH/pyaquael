@@ -34,7 +34,7 @@ def set_color(ip, rbw):
   sock.sendto(MESSAGE.encode(), (UDP_IP, UDP_PORT))
 
 def __main():
-  arguments = docopt(__doc__, version='0.0.3')
+  arguments = docopt(__doc__, version='0.0.4')
   ip = arguments['IPADDRESS']
   rbw = arguments['RBW']
   light = Light(ip)
