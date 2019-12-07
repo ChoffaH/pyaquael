@@ -14,10 +14,10 @@ class Light():
   def __init__(self, ip):
     self._ip = ip
 
-  def poweron(self, rbw):
+  def turn_on(self, rbw):
     set_color(self._ip, rbw)
 
-  def poweroff(self):
+  def turn_off(self):
     set_color(self._ip, OFF_COLOR)
 
 def set_color(ip, rbw):
@@ -34,15 +34,15 @@ def set_color(ip, rbw):
   sock.sendto(MESSAGE.encode(), (UDP_IP, UDP_PORT))
 
 def __main():
-  arguments = docopt(__doc__, version='0.0.2')
+  arguments = docopt(__doc__, version='0.0.3')
   ip = arguments['IPADDRESS']
   rbw = arguments['RBW']
   light = Light(ip)
 
   if arguments['poweron'] is True:
-    light.poweron(rbw)
+    light.turn_on(rbw)
   elif arguments['poweroff'] is True:
-    light.poweroff(ip)
+    light.turn_off()
 
 if __name__ == '__main__':
   __main()

@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
   name='py-aquael',
-  version='0.0.2',
+  version='0.0.3',
   scripts=['aquael.py'],
   author="Christopher Haglund",
   description="A python library for the Aquael Leddy link unofficial API",
