@@ -1,6 +1,18 @@
 import aquael
+import time
 
-light = aquael.Light('192.168.15.230')
-light.poweron('200200112')
+hosts = [
+  {
+    'name': 'Light 1',
+    'host': '192.168.1.200'
+  },
+  {
+    'name': 'Light 2',
+    'host': '192.168.1.201'
+  }
+]
+hub = aquael.Hub(hosts)
+light = hub.lights[0]
+light.turn_on('200200112')
 time.sleep(5)
-light.poweroff()
+light.turn_off()

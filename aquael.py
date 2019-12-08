@@ -9,9 +9,18 @@ from docopt import docopt
 import socket
 
 OFF_COLOR = '000000000'
+class Hub():
+  def __init__(self, hosts):
+    sock = createSock()
+    self._lights = [Light(sock, host['host'], host['name']) for host in hosts]
+
+  @property
+  def lights(self):
+    return self._lights
 
 class Light():
-  def __init__(self, ip, name = None):
+  def __init__(self, sock, ip, name = None):
+    self._sock = sock
     self._ip = ip
     self._name = name
   
@@ -20,29 +29,28 @@ class Light():
     return self._name
 
   def turn_on(self, rbw):
-    set_color(self._ip, rbw)
+    self._set_color(rbw)
 
   def turn_off(self):
-    set_color(self._ip, OFF_COLOR)
+    self._set_color(OFF_COLOR)
 
-def set_color(ip, rbw):
-  UDP_IP = ip
-  UDP_PORT = 2390
-  MESSAGE = 'PWM_SET:' + rbw
+  def _set_color(self, rbw):
+    UDP_IP = self._ip
+    UDP_PORT = 2390
+    MESSAGE = 'PWM_SET:' + rbw
+    self._sock.sendto(MESSAGE.encode(), (UDP_IP, UDP_PORT))
 
-  print('UDP target IP:', UDP_IP)
-  print('UDP target port:', UDP_PORT)
-  print('message:', MESSAGE)
-
+def createSock():
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   sock.bind(('0.0.0.0', 2390))
-  sock.sendto(MESSAGE.encode(), (UDP_IP, UDP_PORT))
+  return sock
 
 def __main():
-  arguments = docopt(__doc__, version='0.0.5')
+  arguments = docopt(__doc__, version='0.0.6')
   ip = arguments['IPADDRESS']
   rbw = arguments['RBW']
-  light = Light(ip)
+  sock = createSock()
+  light = Light(sock, ip)
 
   if arguments['poweron'] is True:
     light.turn_on(rbw)
