@@ -71,7 +71,7 @@ def createSock():
   return sock
 
 def __main():
-  arguments = docopt(__doc__, version='0.0.6')
+  arguments = docopt(__doc__, version='0.0.7')
   ip = arguments['IPADDRESS']
   rbw = arguments['RBW']
   sock = createSock()
