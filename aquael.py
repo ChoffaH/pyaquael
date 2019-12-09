@@ -23,22 +23,47 @@ class Light():
     self._sock = sock
     self._ip = ip
     self._name = name
+    self._is_on = False
+    self._brightness = 255
   
   @property
   def name(self):
     return self._name
 
-  def turn_on(self, rbw):
+  @property
+  def is_on(self):
+    return self._is_on
+  
+  @property
+  def brightness(self):
+    return self._brightness
+
+  @brightness.setter
+  def brightness(self, value):
+    self._brightness = value
+
+  def turn_on(self, r, b, w):
+    rbw =  self._adjust_color(r) + self._adjust_color(b) + self._adjust_color(w)
     self._set_color(rbw)
+    self._is_on = True
 
   def turn_off(self):
     self._set_color(OFF_COLOR)
+    self._is_on = False
 
   def _set_color(self, rbw):
     UDP_IP = self._ip
     UDP_PORT = 2390
     MESSAGE = 'PWM_SET:' + rbw
     self._sock.sendto(MESSAGE.encode(), (UDP_IP, UDP_PORT))
+
+  def _adjust_color(self, c):
+    brightness_pct = self._brightness / 255
+    color = int(round((c * brightness_pct)))
+    color = color if color <= c else c
+    color = color if color <= 200 else 200
+    color = color if color >= 1 else 1
+    return "{:03d}".format(color)
 
 def createSock():
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
