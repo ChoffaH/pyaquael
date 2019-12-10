@@ -9,6 +9,8 @@ from docopt import docopt
 import socket
 
 OFF_COLOR = '000000000'
+UDP_PORT = 2390
+
 class Hub():
   def __init__(self, hosts):
     sock = createSock()
@@ -44,18 +46,20 @@ class Light():
 
   def turn_on(self, r, b, w):
     rbw =  self._adjust_color(r) + self._adjust_color(b) + self._adjust_color(w)
-    self._set_color(rbw)
-    self._is_on = True
+    res = self._set_color(rbw)
+    if 'PWMOK' in res:
+      self._is_on = True
 
   def turn_off(self):
-    self._set_color(OFF_COLOR)
-    self._is_on = False
+    res = self._set_color(OFF_COLOR)
+    if 'PWMOK' in res:
+      self._is_on = False
 
   def _set_color(self, rbw):
-    UDP_IP = self._ip
-    UDP_PORT = 2390
-    MESSAGE = 'PWM_SET:' + rbw
-    self._sock.sendto(MESSAGE.encode(), (UDP_IP, UDP_PORT))
+    message = 'PWM_SET:' + rbw
+    self._sock.sendto(message.encode(), (self._ip, UDP_PORT))
+    receivedBytes = self._sock.recvfrom(1024)
+    return receivedBytes[0].decode()
 
   def _adjust_color(self, c):
     brightness_pct = self._brightness / 255
@@ -67,11 +71,11 @@ class Light():
 
 def createSock():
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  sock.bind(('0.0.0.0', 2390))
+  sock.bind(('0.0.0.0', UDP_PORT))
   return sock
 
 def __main():
-  arguments = docopt(__doc__, version='0.0.7')
+  arguments = docopt(__doc__, version='0.0.8')
   ip = arguments['IPADDRESS']
   rbw = arguments['RBW']
   sock = createSock()
