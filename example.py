@@ -1,5 +1,4 @@
 import aquael
-import time
 
 hosts = [
   {
@@ -13,12 +12,11 @@ hosts = [
 ]
 hub = aquael.Hub(hosts)
 light = hub.lights[0]
-light.brightness = 100
-light.turn_on(200, 200, 112)
-light = hub.lights[1]
 light.brightness = 255
 light.turn_on(200, 200, 112)
+light.update()
+
 while True:
   if light.is_on:
-    print(f'Light is on? {light.is_on}')
+    print(f'Light is on? {light.is_on} {light.color}')
     break
