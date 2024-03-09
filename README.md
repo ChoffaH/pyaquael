@@ -1,4 +1,4 @@
-# py-aquael
+# pyaquael
 A python library for the Aquael Leddy link unofficial API
 
 ## Usage
