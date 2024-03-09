@@ -3,11 +3,11 @@ from pyaquael import aquael
 hosts = [
   {
     'name': 'Light 1',
-    'host': '192.168.1.200'
+    'host': '192.168.30.80'
   },
   {
     'name': 'Light 2',
-    'host': '192.168.1.201'
+    'host': '192.168.30.81'
   }
 ]
 hub = aquael.Hub(hosts)
