@@ -1,4 +1,4 @@
-import aquael
+from pyaquael import aquael
 
 hosts = [
   {
@@ -12,7 +12,7 @@ hosts = [
 ]
 hub = aquael.Hub(hosts)
 light = hub.lights[0]
-light.brightness = 255
+light.brightness = 150
 light.turn_on(200, 200, 112)
 light.update()
 

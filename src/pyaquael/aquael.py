@@ -103,7 +103,7 @@ class Light():
     color = color if color >= 1 else 1
     return "{:03d}".format(color)
 
-def __main():
+def main_cli():
   arguments = docopt(__doc__, version='0.1.0')
   ip = arguments['IPADDRESS']
   rbw = arguments['RBW']
@@ -116,4 +116,4 @@ def __main():
     light.turn_off()
 
 if __name__ == '__main__':
-  __main()
+  main_cli()

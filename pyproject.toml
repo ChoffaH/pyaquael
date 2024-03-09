@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyaquael"
+version = "0.2.2"
+authors = [
+  { name="Christopher Haglund" },
+]
+description = "A python library for the Aquael Leddy link unofficial API"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["docopt"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+aquael-cli = "pyaquael:main_cli"
+
+[project.urls]
+Homepage = "https://github.com/choffah/pyaquael"
+Issues = "https://github.com/choffah/pyaquael/issues"
