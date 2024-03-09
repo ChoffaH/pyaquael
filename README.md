@@ -8,10 +8,10 @@ This library can also be used from the command line:
 
 ```
 Usage:
-  aquael poweron IPADDRESS RBW
-  aquael poweroff IPADDRESS
-  aquael (-h | --help)
-  aquael --version
+  aquael-cli poweron IPADDRESS RBW
+  aquael-cli poweroff IPADDRESS
+  aquael-cli (-h | --help)
+  aquael-cli --version
 ```
 
 ## Build and push to PyPI

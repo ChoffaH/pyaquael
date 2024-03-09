@@ -5,7 +5,6 @@
   aquael (-h | --help)
   aquael --version
 '''
-from docopt import docopt
 import threading
 import socket
 
@@ -102,18 +101,3 @@ class Light():
     color = color if color <= 200 else 200
     color = color if color >= 1 else 1
     return "{:03d}".format(color)
-
-def main_cli():
-  arguments = docopt(__doc__, version='0.1.0')
-  ip = arguments['IPADDRESS']
-  rbw = arguments['RBW']
-  sock = createSock()
-  light = Light(sock, ip)
-
-  if arguments['poweron'] is True:
-    light.turn_on(rbw)
-  elif arguments['poweroff'] is True:
-    light.turn_off()
-
-if __name__ == '__main__':
-  main_cli()
