@@ -5,14 +5,14 @@ with open("README.md", "r") as fh:
 
 
 setuptools.setup(
-  name='py-aquael',
-  version='0.1.0',
+  name='pyaquael',
+  version='0.2.0',
   scripts=['aquael.py'],
   author="Christopher Haglund",
   description="A python library for the Aquael Leddy link unofficial API",
   long_description=long_description,
   long_description_content_type="text/markdown",
-  url="https://github.com/choffah/py-aquael",
+  url="https://github.com/choffah/pyaquael",
   packages=setuptools.find_packages(),
   install_requires=[
     'docopt',
