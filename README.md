@@ -4,15 +4,7 @@ A python library for the Aquael Leddy link unofficial API
 ## Usage
 See [simple.py](examples/simple.py) for examples on using library through import.
 
-This library can also be used from the command line:
-
-```
-Usage:
-  aquael-cli poweron IPADDRESS RBW
-  aquael-cli poweroff IPADDRESS
-  aquael-cli (-h | --help)
-  aquael-cli --version
-```
+This library can also be used from the command line. See `aquael-cli --help` for usage instructions
 
 ## Build and push to PyPI
 
