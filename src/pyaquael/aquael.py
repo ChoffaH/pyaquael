@@ -30,7 +30,7 @@ class Hub():
   def _recv_response(self):
     while True:
       data, addr = self._sock.recvfrom(1024)
-      ip, port = addr
+      ip, _ = addr
       for light in self._lights:
         if light.ip == ip:
           res = data.decode()
