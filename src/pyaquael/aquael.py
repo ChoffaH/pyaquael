@@ -1,52 +1,26 @@
 #!/usr/bin/env python
-'''Usage:
-  aquael poweron IPADDRESS RBW
-  aquael poweroff IPADDRESS
-  aquael (-h | --help)
-  aquael --version
-'''
-import threading
+"""Aquael module for controlling Aquael LED lights over UDP."""
+import asyncio
 import socket
+import asyncudp
 
-OFF_COLOR = '000000000'
+OFF_COLOR = "000000000"
 UDP_PORT = 2390
 
 class Hub():
   def __init__(self, hosts):
-    self._sock = self._create_sock()
-    self._lights = [Light(self._sock, host['host'], host['name']) for host in hosts]
-    thread = threading.Thread(target=self._recv_response, daemon=True)
-    thread.start()
+    self._lights = [Light(host["host"], host["name"]) for host in hosts]
 
   @property
   def lights(self):
     return self._lights
 
-  def _create_sock(self):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(('0.0.0.0', UDP_PORT))
-    return sock
-
-  def _recv_response(self):
-    while True:
-      data, addr = self._sock.recvfrom(1024)
-      ip, _ = addr
-      for light in self._lights:
-        if light.ip == ip:
-          res = data.decode()
-          if 'ALL:' in res:
-            colors = res.strip().split(':')
-            colors.pop(0)
-            light.color = ''.join(colors)
-
-
 class Light():
-  def __init__(self, sock, ip, name = None):
-    self._sock = sock
+  def __init__(self, ip: str, name: str):
     self._ip = ip
     self._name = name
     self._color = OFF_COLOR
-    self._brightness = 255
+    self._brightness_pct = 1
   
   @property
   def ip(self):
@@ -70,11 +44,34 @@ class Light():
 
   @property
   def brightness(self):
-    return self._brightness
+    return round(self._brightness_pct * 255)
 
   @brightness.setter
   def brightness(self, value):
-    self._brightness = value
+    self._brightness_pct = value / 255
+
+  @property
+  def brightness_pct(self):
+    return self._brightness_pct
+  
+  @brightness_pct.setter
+  def brightness_pct(self, value):
+    self._brightness_pct = min(max(value, 0), 1)
+
+  def _adjust_color(self, c):
+    color = min(max(round(c * self.brightness_pct), 1), 200)
+    return "{:03d}".format(color)
+
+  # Sync methods
+  def update(self):
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+      sock.bind(("0.0.0.0", UDP_PORT))
+      sock.sendto(b"PWM_READ", (self.ip, UDP_PORT))
+      data = sock.recv(1024)
+      res = data.decode()
+      if "ALL:" in res:
+        colors = res.strip().split(":")[1:]
+        self._color = "".join(colors)
 
   def turn_on(self, r, b, w):
     rbw =  self._adjust_color(r) + self._adjust_color(b) + self._adjust_color(w)
@@ -83,21 +80,42 @@ class Light():
   def turn_off(self):
     self._dispatch_color(OFF_COLOR)
 
-  def update(self):
-    self._dispatch_update()
-
   def _dispatch_color(self, rbw):
-    message = 'PWM_SET:' + rbw
-    self._sock.sendto(message.encode(), (self._ip, UDP_PORT))
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+      sock.bind(("0.0.0.0", UDP_PORT))
+      message = f"PWM_SET:{rbw}"
+      sock.sendto(message.encode(), (self.ip, UDP_PORT))
+      data = sock.recv(1024)
+      res = data.decode()
+      if "PWMOK" not in res:
+        raise ConnectionError(f"Error setting color on {self.ip}")
 
-  def _dispatch_update(self):
-    message = 'PWM_READ'
-    self._sock.sendto(message.encode(), (self._ip, UDP_PORT))
+  # Async methods
+  async def async_update(self):
+    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
+      sock.sendto(b"PWM_READ", (self.ip, UDP_PORT))
+      data, _ = await sock.recvfrom()
+      res = data.decode()
+      if "ALL:" in res:
+        colors = res.strip().split(":")[1:]
+        self._color = "".join(colors)
 
-  def _adjust_color(self, c):
-    brightness_pct = self._brightness / 255
-    color = int(round((c * brightness_pct)))
-    color = color if color <= c else c
-    color = color if color <= 200 else 200
-    color = color if color >= 1 else 1
-    return "{:03d}".format(color)
+    await asyncio.sleep(0) # Needed to avoid "Address already in use" error
+
+  async def async_turn_on(self, r, b, w):
+    rbw =  self._adjust_color(r) + self._adjust_color(b) + self._adjust_color(w)
+    await self._async_dispatch_color(rbw)
+
+  async def async_turn_off(self):
+    await self._async_dispatch_color(OFF_COLOR)
+
+  async def _async_dispatch_color(self, rbw):
+    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
+      message = f"PWM_SET:{rbw}"
+      sock.sendto(message.encode(), (self.ip, UDP_PORT))
+      data, _ = await sock.recvfrom()
+      res = data.decode()
+      if "PWMOK" not in res:
+        raise ConnectionError(f"Error setting color on {self.ip}")
+
+    await asyncio.sleep(0) # Needed to avoid "Address already in use" error
