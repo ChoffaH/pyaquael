@@ -13,3 +13,9 @@ rm -rf dist
 python3 -m build
 python3 -m twine upload dist/*
 ```
+
+## Install local build
+
+```
+python3 -m pip install --force dist/pyaquael-0.5.0-py3-none-any.whl
+```
