@@ -83,6 +83,17 @@ class Light():
     return color
 
   # Sync methods
+  def test_connection(self):
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+      sock.settimeout(5)
+      sock.bind(("0.0.0.0", UDP_PORT))
+      try:
+        sock.sendto(b"PWM_READ?", (self.ip, UDP_PORT))
+        sock.recv(1024)
+        return True
+      except socket.timeout:
+        return False
+
   def get_mac_address(self):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
       sock.bind(("0.0.0.0", UDP_PORT))
@@ -122,6 +133,18 @@ class Light():
         raise ConnectionError(f"Error setting color on {self.ip}")
 
   # Async methods
+  async def async_test_connection(self):
+    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
+      sock.sendto(b"PWM_READ", (self.ip, UDP_PORT))
+      try:
+        await asyncio.wait_for(sock.recvfrom(), timeout=5)
+        result = True
+      except asyncio.TimeoutError:
+        result = False
+
+    await asyncio.sleep(0) # Needed to avoid "Address already in use" error
+    return result
+
   async def async_get_mac_address(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
       sock.sendto(b"MAC?", (self.ip, UDP_PORT))
