@@ -61,17 +61,48 @@ class Light():
   def _adjust_color(self, c):
     color = min(max(round(c * self.brightness_pct), 1), 200)
     return "{:03d}".format(color)
+  
+  def _extract_mac_address(self, data):
+    res = data.decode()
+    mac_address = None
+    if "MAC:" in res:
+      mac_address = res.strip().split(":")[1:]
+      mac_address = ":".join(mac_address)
+    return mac_address
+  
+  def _extract_name(self, data):
+    res = data.decode()
+    return res
+  
+  def _extract_color(self, data):
+    res = data.decode()
+    color = None
+    if "ALL:" in res:
+      color = res.strip().split(":")[1:]
+      color = "".join(color)
+    return color
 
   # Sync methods
+  def get_mac_address(self):
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+      sock.bind(("0.0.0.0", UDP_PORT))
+      sock.sendto(b"MAC?", (self.ip, UDP_PORT))
+      data = sock.recv(1024)
+      return self._extract_mac_address(data)
+    
+  def get_name(self):
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+      sock.bind(("0.0.0.0", UDP_PORT))
+      sock.sendto(b"NAME?", (self.ip, UDP_PORT))
+      data = sock.recv(1024)
+      return self._extract_name(data)
+
   def update(self):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
       sock.bind(("0.0.0.0", UDP_PORT))
       sock.sendto(b"PWM_READ", (self.ip, UDP_PORT))
       data = sock.recv(1024)
-      res = data.decode()
-      if "ALL:" in res:
-        colors = res.strip().split(":")[1:]
-        self._color = "".join(colors)
+      self._color = self._extract_color(data)
 
   def turn_on(self, r, b, w):
     rbw =  self._adjust_color(r) + self._adjust_color(b) + self._adjust_color(w)
@@ -91,14 +122,29 @@ class Light():
         raise ConnectionError(f"Error setting color on {self.ip}")
 
   # Async methods
+  async def async_get_mac_address(self):
+    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
+      sock.sendto(b"MAC?", (self.ip, UDP_PORT))
+      data, _ = await sock.recvfrom()
+      mac_address = self._extract_mac_address(data)
+
+    await asyncio.sleep(0) # Needed to avoid "Address already in use" error
+    return mac_address
+  
+  async def async_get_name(self):
+    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
+      sock.sendto(b"NAME?", (self.ip, UDP_PORT))
+      data, _ = await sock.recvfrom()
+      name = self._extract_name(data)
+
+    await asyncio.sleep(0) # Needed to avoid "Address already in use" error
+    return name
+
   async def async_update(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
       sock.sendto(b"PWM_READ", (self.ip, UDP_PORT))
       data, _ = await sock.recvfrom()
-      res = data.decode()
-      if "ALL:" in res:
-        colors = res.strip().split(":")[1:]
-        self._color = "".join(colors)
+      self._color = self._extract_color(data)
 
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
 
