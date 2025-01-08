@@ -9,26 +9,21 @@ UDP_PORT = 2390
 
 class Hub():
   def __init__(self, hosts):
-    self._lights = [Light(host["host"], host["name"]) for host in hosts]
+    self._lights = [Light(host) for host in hosts]
 
   @property
   def lights(self):
     return self._lights
 
 class Light():
-  def __init__(self, ip: str, name: str):
-    self._ip = ip
-    self._name = name
+  def __init__(self, host: str):
+    self._host = host
     self._color = OFF_COLOR
     self._brightness_pct = 1
   
   @property
-  def ip(self):
-    return self._ip
-
-  @property
-  def name(self):
-    return self._name
+  def host(self):
+    return self._host
 
   @property
   def is_on(self):
@@ -88,7 +83,7 @@ class Light():
       sock.settimeout(5)
       sock.bind(("0.0.0.0", UDP_PORT))
       try:
-        sock.sendto(b"PWM_READ?", (self.ip, UDP_PORT))
+        sock.sendto(b"PWM_READ?", (self.host, UDP_PORT))
         sock.recv(1024)
         return True
       except socket.timeout:
@@ -97,21 +92,21 @@ class Light():
   def get_mac_address(self):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
       sock.bind(("0.0.0.0", UDP_PORT))
-      sock.sendto(b"MAC?", (self.ip, UDP_PORT))
+      sock.sendto(b"MAC?", (self.host, UDP_PORT))
       data = sock.recv(1024)
       return self._extract_mac_address(data)
     
   def get_name(self):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
       sock.bind(("0.0.0.0", UDP_PORT))
-      sock.sendto(b"NAME?", (self.ip, UDP_PORT))
+      sock.sendto(b"NAME?", (self.host, UDP_PORT))
       data = sock.recv(1024)
       return self._extract_name(data)
 
   def update(self):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
       sock.bind(("0.0.0.0", UDP_PORT))
-      sock.sendto(b"PWM_READ", (self.ip, UDP_PORT))
+      sock.sendto(b"PWM_READ", (self.host, UDP_PORT))
       data = sock.recv(1024)
       self._color = self._extract_color(data)
 
@@ -126,16 +121,16 @@ class Light():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
       sock.bind(("0.0.0.0", UDP_PORT))
       message = f"PWM_SET:{rbw}"
-      sock.sendto(message.encode(), (self.ip, UDP_PORT))
+      sock.sendto(message.encode(), (self.host, UDP_PORT))
       data = sock.recv(1024)
       res = data.decode()
       if "PWMOK" not in res:
-        raise ConnectionError(f"Error setting color on {self.ip}")
+        raise ConnectionError(f"Error setting color on {self.host}")
 
   # Async methods
   async def async_test_connection(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
-      sock.sendto(b"PWM_READ", (self.ip, UDP_PORT))
+      sock.sendto(b"PWM_READ", (self.host, UDP_PORT))
       try:
         await asyncio.wait_for(sock.recvfrom(), timeout=5)
         result = True
@@ -147,7 +142,7 @@ class Light():
 
   async def async_get_mac_address(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
-      sock.sendto(b"MAC?", (self.ip, UDP_PORT))
+      sock.sendto(b"MAC?", (self.host, UDP_PORT))
       data, _ = await sock.recvfrom()
       mac_address = self._extract_mac_address(data)
 
@@ -156,7 +151,7 @@ class Light():
   
   async def async_get_name(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
-      sock.sendto(b"NAME?", (self.ip, UDP_PORT))
+      sock.sendto(b"NAME?", (self.host, UDP_PORT))
       data, _ = await sock.recvfrom()
       name = self._extract_name(data)
 
@@ -165,7 +160,7 @@ class Light():
 
   async def async_update(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
-      sock.sendto(b"PWM_READ", (self.ip, UDP_PORT))
+      sock.sendto(b"PWM_READ", (self.host, UDP_PORT))
       data, _ = await sock.recvfrom()
       self._color = self._extract_color(data)
 
@@ -181,10 +176,10 @@ class Light():
   async def _async_dispatch_color(self, rbw):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
       message = f"PWM_SET:{rbw}"
-      sock.sendto(message.encode(), (self.ip, UDP_PORT))
+      sock.sendto(message.encode(), (self.host, UDP_PORT))
       data, _ = await sock.recvfrom()
       res = data.decode()
       if "PWMOK" not in res:
-        raise ConnectionError(f"Error setting color on {self.ip}")
+        raise ConnectionError(f"Error setting color on {self.host}")
 
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
