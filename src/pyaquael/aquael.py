@@ -77,60 +77,29 @@ class Light():
       color = "".join(color)
     return color
 
-  # Sync methods
+  # Sync methods, only here for compatibility for now
   def test_connection(self):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-      sock.settimeout(5)
-      sock.bind(("0.0.0.0", UDP_PORT))
-      try:
-        sock.sendto(b"PWM_READ?", (self.host, UDP_PORT))
-        sock.recv(1024)
-        return True
-      except socket.timeout:
-        return False
+    return asyncio.run(self.async_test_connection())
 
   def get_mac_address(self):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-      sock.bind(("0.0.0.0", UDP_PORT))
-      sock.sendto(b"MAC?", (self.host, UDP_PORT))
-      data = sock.recv(1024)
-      return self._extract_mac_address(data)
+    return asyncio.run(self.async_get_mac_address())
     
   def get_name(self):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-      sock.bind(("0.0.0.0", UDP_PORT))
-      sock.sendto(b"NAME?", (self.host, UDP_PORT))
-      data = sock.recv(1024)
-      return self._extract_name(data)
+    return asyncio.run(self.async_get_name())
 
   def update(self):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-      sock.bind(("0.0.0.0", UDP_PORT))
-      sock.sendto(b"PWM_READ", (self.host, UDP_PORT))
-      data = sock.recv(1024)
-      self._color = self._extract_color(data)
+    asyncio.run(self.async_update())
 
   def turn_on(self, r, b, w):
-    rbw =  self._adjust_color(r) + self._adjust_color(b) + self._adjust_color(w)
-    self._dispatch_color(rbw)
+    asyncio.run(self.async_turn_on(r, b, w))
 
   def turn_off(self):
-    self._dispatch_color(OFF_COLOR)
-
-  def _dispatch_color(self, rbw):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-      sock.bind(("0.0.0.0", UDP_PORT))
-      message = f"PWM_SET:{rbw}"
-      sock.sendto(message.encode(), (self.host, UDP_PORT))
-      data = sock.recv(1024)
-      res = data.decode()
-      if "PWMOK" not in res:
-        raise ConnectionError(f"Error setting color on {self.host}")
+    asyncio.run(self.async_turn_off())
 
   # Async methods
   async def async_test_connection(self):
-    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
-      sock.sendto(b"PWM_READ", (self.host, UDP_PORT))
+    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
+      sock.sendto(b"PWM_READ")
       try:
         await asyncio.wait_for(sock.recvfrom(), timeout=5)
         result = True
@@ -141,8 +110,8 @@ class Light():
     return result
 
   async def async_get_mac_address(self):
-    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
-      sock.sendto(b"MAC?", (self.host, UDP_PORT))
+    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
+      sock.sendto(b"MAC?")
       data, _ = await sock.recvfrom()
       mac_address = self._extract_mac_address(data)
 
@@ -150,8 +119,8 @@ class Light():
     return mac_address
   
   async def async_get_name(self):
-    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
-      sock.sendto(b"NAME?", (self.host, UDP_PORT))
+    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
+      sock.sendto(b"NAME?")
       data, _ = await sock.recvfrom()
       name = self._extract_name(data)
 
@@ -159,8 +128,8 @@ class Light():
     return name
 
   async def async_update(self):
-    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
-      sock.sendto(b"PWM_READ", (self.host, UDP_PORT))
+    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
+      sock.sendto(b"PWM_READ")
       data, _ = await sock.recvfrom()
       self._color = self._extract_color(data)
 
@@ -174,9 +143,9 @@ class Light():
     await self._async_dispatch_color(OFF_COLOR)
 
   async def _async_dispatch_color(self, rbw):
-    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT)) as sock:
+    async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       message = f"PWM_SET:{rbw}"
-      sock.sendto(message.encode(), (self.host, UDP_PORT))
+      sock.sendto(message.encode())
       data, _ = await sock.recvfrom()
       res = data.decode()
       if "PWMOK" not in res:

@@ -13,7 +13,6 @@ def manage_light(light, name):
   else:
     light.turn_off()
     sleep(2)
-    light.brightness_pct = 1
     light.turn_on(200, 200, 112)
     light.update()
 

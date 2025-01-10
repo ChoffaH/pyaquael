@@ -14,7 +14,6 @@ async def main():
     else:
       await light.async_turn_off()
       await asyncio.sleep(2)
-      light.brightness_pct = 1
       await light.async_turn_on(200, 200, 112)
       await light.async_update()
 
@@ -28,8 +27,9 @@ async def main():
       else:
         print(f'{name} is off.')
 
-  await manage_light(light1, 'Light 1')
-  print('')
-  await manage_light(light2, 'Light 2')
+  await asyncio.gather(
+    manage_light(light1, 'Light 1'),
+    manage_light(light2, 'Light 2')
+  )
 
 asyncio.run(main())
