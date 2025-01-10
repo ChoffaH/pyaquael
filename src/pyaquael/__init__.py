@@ -18,27 +18,25 @@ Options:
 from importlib.metadata import version
 from docopt import docopt
 from pyaquael import aquael
+import asyncio
 
-def main_cli():
+async def _async_main_cli():
   arguments = docopt(__doc__, version=version('pyaquael'))
-  print(arguments)
   ip = arguments['IPADDRESS']
   brightness = int(arguments['--brightness'])
   r = int(arguments['-r'])
   b = int(arguments['-b'])
   w = int(arguments['-w'])
-  hosts = [
-    {
-      'name': 'Light 1',
-      'host': ip
-    }
-  ]
+  hosts = [ip]
 
   hub = aquael.Hub(hosts)
   light = hub.lights[0]
 
   if arguments['poweron'] is True:
     light.brightness = brightness
-    light.turn_on(r, b, w)
+    await light.async_turn_on(r, b, w)
   elif arguments['poweroff'] is True:
-    light.turn_off()
+    await light.async_turn_off()
+
+def main_cli():
+  asyncio.run(_async_main_cli())

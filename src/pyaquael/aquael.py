@@ -77,26 +77,6 @@ class Light():
       color = "".join(color)
     return color
 
-  # Sync methods, only here for compatibility for now
-  def test_connection(self):
-    return asyncio.run(self.async_test_connection())
-
-  def get_mac_address(self):
-    return asyncio.run(self.async_get_mac_address())
-    
-  def get_name(self):
-    return asyncio.run(self.async_get_name())
-
-  def update(self):
-    asyncio.run(self.async_update())
-
-  def turn_on(self, r, b, w):
-    asyncio.run(self.async_turn_on(r, b, w))
-
-  def turn_off(self):
-    asyncio.run(self.async_turn_off())
-
-  # Async methods
   async def async_test_connection(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       sock.sendto(b"PWM_READ")
