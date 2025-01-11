@@ -92,7 +92,7 @@ class Light():
   async def async_get_mac_address(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       sock.sendto(b"MAC?")
-      data, _ = await sock.recvfrom()
+      data, _ = await asyncio.wait_for(sock.recvfrom(), timeout=30)
       mac_address = self._extract_mac_address(data)
 
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
@@ -101,7 +101,7 @@ class Light():
   async def async_get_name(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       sock.sendto(b"NAME?")
-      data, _ = await sock.recvfrom()
+      data, _ = await asyncio.wait_for(sock.recvfrom(), timeout=30)
       name = self._extract_name(data)
 
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
@@ -110,7 +110,7 @@ class Light():
   async def async_update(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       sock.sendto(b"PWM_READ")
-      data, _ = await sock.recvfrom()
+      data, _ = await asyncio.wait_for(sock.recvfrom(), timeout=30)
       self._color = self._extract_color(data)
 
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
@@ -126,7 +126,7 @@ class Light():
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       message = f"PWM_SET:{rbw}"
       sock.sendto(message.encode())
-      data, _ = await sock.recvfrom()
+      data, _ = await asyncio.wait_for(sock.recvfrom(), timeout=30)
       res = data.decode()
       if "PWMOK" not in res:
         raise ConnectionError(f"Error setting color on {self.host}")
