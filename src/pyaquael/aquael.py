@@ -80,14 +80,10 @@ class Light():
   async def async_test_connection(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       sock.sendto(b"PWM_READ")
-      try:
-        await asyncio.wait_for(sock.recvfrom(), timeout=5)
-        result = True
-      except asyncio.TimeoutError:
-        result = False
+      await asyncio.wait_for(sock.recvfrom(), timeout=5)
 
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
-    return result
+    return True
 
   async def async_get_mac_address(self):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
