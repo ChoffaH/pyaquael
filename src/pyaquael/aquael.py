@@ -4,11 +4,11 @@ import asyncio
 import socket
 import asyncudp
 
-OFF_COLOR = "000000000"
+OFF_COLOR = [0, 0, 0]
 UDP_PORT = 2390
 
 class Hub():
-  def __init__(self, hosts):
+  def __init__(self, hosts: list[str]):
     self._lights = [Light(host) for host in hosts]
 
   @property
@@ -33,16 +33,12 @@ class Light():
   def color(self):
     return self._color
 
-  @color.setter
-  def color(self, value):
-    self._color = value
-
   @property
   def brightness(self):
     return round(self._brightness_pct * 255)
 
   @brightness.setter
-  def brightness(self, value):
+  def brightness(self, value: int):
     self._brightness_pct = value / 255
 
   @property
@@ -50,14 +46,14 @@ class Light():
     return self._brightness_pct
   
   @brightness_pct.setter
-  def brightness_pct(self, value):
+  def brightness_pct(self, value: float):
     self._brightness_pct = min(max(value, 0), 1)
 
-  def _adjust_color(self, c):
+  def _adjust_color(self, c: int):
     color = min(max(round(c * self.brightness_pct), 1), 200)
     return "{:03d}".format(color)
   
-  def _extract_mac_address(self, data):
+  def _extract_mac_address(self, data) -> str:
     res = data.decode()
     mac_address = None
     if "MAC:" in res:
@@ -65,19 +61,19 @@ class Light():
       mac_address = ":".join(mac_address)
     return mac_address
   
-  def _extract_name(self, data):
+  def _extract_name(self, data) -> str:
     res = data.decode()
     return res
   
   def _extract_color(self, data):
     res = data.decode()
-    color = None
+    color = OFF_COLOR
     if "ALL:" in res:
       color = res.strip().split(":")[1:]
-      color = "".join(color)
+      color = [int(c) for c in color]
     return color
 
-  async def async_test_connection(self):
+  async def async_test_connection(self) -> bool:
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       sock.sendto(b"PWM_READ")
       await asyncio.wait_for(sock.recvfrom(), timeout=5)
@@ -85,7 +81,7 @@ class Light():
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
     return True
 
-  async def async_get_mac_address(self):
+  async def async_get_mac_address(self) -> str:
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       sock.sendto(b"MAC?")
       data, _ = await asyncio.wait_for(sock.recvfrom(), timeout=30)
@@ -94,7 +90,7 @@ class Light():
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
     return mac_address
   
-  async def async_get_name(self):
+  async def async_get_name(self) -> str:
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       sock.sendto(b"NAME?")
       data, _ = await asyncio.wait_for(sock.recvfrom(), timeout=30)
@@ -111,14 +107,15 @@ class Light():
 
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
 
-  async def async_turn_on(self, r, b, w):
+  async def async_turn_on(self, r: int, b: int, w: int):
     rbw =  self._adjust_color(r) + self._adjust_color(b) + self._adjust_color(w)
     await self._async_dispatch_color(rbw)
 
   async def async_turn_off(self):
-    await self._async_dispatch_color(OFF_COLOR)
+    rbw = "".join(["{:03d}".format(c) for c in OFF_COLOR])
+    await self._async_dispatch_color(rbw)
 
-  async def _async_dispatch_color(self, rbw):
+  async def _async_dispatch_color(self, rbw: str):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       message = f"PWM_SET:{rbw}"
       sock.sendto(message.encode())

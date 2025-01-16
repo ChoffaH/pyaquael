@@ -23,7 +23,8 @@ async def main():
       print(f'{name} MAC Address: {light_mac_address}')
       print(f'{name} Name: {light_name}')
       if light.is_on:
-        print(f'{name} is on. Color: {light.color}')
+        print(f'{name} is on:')
+        print(f'\tColor: {light.color}')
       else:
         print(f'{name} is off.')
 
