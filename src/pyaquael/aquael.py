@@ -4,7 +4,7 @@ import asyncio
 import socket
 import asyncudp
 
-OFF_COLOR = [0, 0, 0]
+OFF_COLORS = [0, 0, 0]
 UDP_PORT = 2390
 
 class Hub():
@@ -18,7 +18,7 @@ class Hub():
 class Light():
   def __init__(self, host: str):
     self._host = host
-    self._color = OFF_COLOR
+    self._colors = OFF_COLORS
     self._brightness_pct = 1
   
   @property
@@ -27,11 +27,11 @@ class Light():
 
   @property
   def is_on(self):
-    return self._color != OFF_COLOR
+    return self._colors != OFF_COLORS
   
   @property
-  def color(self):
-    return self._color
+  def colors(self):
+    return self._colors
 
   @property
   def brightness(self):
@@ -65,13 +65,13 @@ class Light():
     res = data.decode()
     return res
   
-  def _extract_color(self, data):
+  def _extract_colors(self, data):
     res = data.decode()
-    color = OFF_COLOR
+    colors = OFF_COLORS
     if "ALL:" in res:
-      color = res.strip().split(":")[1:]
-      color = [int(c) for c in color]
-    return color
+      colors = res.strip().split(":")[1:]
+      colors = [int(c) for c in colors]
+    return colors
 
   async def async_test_connection(self) -> bool:
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
@@ -103,25 +103,25 @@ class Light():
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       sock.sendto(b"PWM_READ")
       data, _ = await asyncio.wait_for(sock.recvfrom(), timeout=30)
-      self._color = self._extract_color(data)
+      self._colors = self._extract_colors(data)
 
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
 
   async def async_turn_on(self, r: int, b: int, w: int):
     rbw =  self._adjust_color(r) + self._adjust_color(b) + self._adjust_color(w)
-    await self._async_dispatch_color(rbw)
+    await self._async_dispatch_colors(rbw)
 
   async def async_turn_off(self):
-    rbw = "".join(["{:03d}".format(c) for c in OFF_COLOR])
-    await self._async_dispatch_color(rbw)
+    rbw = "".join(["{:03d}".format(c) for c in OFF_COLORS])
+    await self._async_dispatch_colors(rbw)
 
-  async def _async_dispatch_color(self, rbw: str):
+  async def _async_dispatch_colors(self, rbw: str):
     async with await asyncudp.create_socket(local_addr=("0.0.0.0", UDP_PORT), remote_addr=(self.host, UDP_PORT), reuse_port=True) as sock:
       message = f"PWM_SET:{rbw}"
       sock.sendto(message.encode())
       data, _ = await asyncio.wait_for(sock.recvfrom(), timeout=30)
       res = data.decode()
       if "PWMOK" not in res:
-        raise ConnectionError(f"Error setting color on {self.host}")
+        raise ConnectionError(f"Error setting colors on {self.host}")
 
     await asyncio.sleep(0) # Needed to avoid "Address already in use" error
